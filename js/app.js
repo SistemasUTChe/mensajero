@@ -148,7 +148,7 @@ postBtn.on('click', function() {
 
     console.log(data);
 
-    fetch('http://proyectoPWA.test/api/messages', {
+    fetch('https://cursos.uqroo.mx/didactica/public/api/messages', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -170,7 +170,7 @@ postBtn.on('click', function() {
 // Obtener mensajes del servidor
 function getMensajes() {
 
-    fetch('http://proyectoPWA.test/api/messages')
+    fetch('https://cursos.uqroo.mx/didactica/public/api/messages')
         .then( res => res.json() )
         .then( respuesta => {
             console.log(respuesta);
