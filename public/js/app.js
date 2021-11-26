@@ -26,6 +26,22 @@ if ( navigator.serviceWorker ) {
 
 // Referencias de jQuery
 
+// Referencias de jQuery
+var googleMapKey = 'AIzaSyA5mjCwx1TRLuBAjwQw84WE6h5ErSe7Uj8';
+
+// Google Maps llaves alternativas - desarrollo
+// AIzaSyDyJPPlnIMOLp20Ef1LlTong8rYdTnaTXM
+// AIzaSyDzbQ_553v-n8QNs2aafN9QaZbByTyM7gQ
+// AIzaSyA5mjCwx1TRLuBAjwQw84WE6h5ErSe7Uj8
+// AIzaSyCroCERuudf2z02rCrVa6DTkeeneQuq8TA
+// AIzaSyBkDYSVRVtQ6P2mf2Xrq0VBjps8GEcWsLU
+// AIzaSyAu2rb0mobiznVJnJd6bVb5Bn2WsuXP2QI
+// AIzaSyAZ7zantyAHnuNFtheMlJY1VvkRBEjvw9Y
+// AIzaSyDSPDpkFznGgzzBSsYvTq_sj0T0QCHRgwM
+// AIzaSyD4YFaT5DvwhhhqMpDP2pBInoG8BTzA9JY
+// AIzaSyAbPC1F9pWeD70Ny8PHcjguPffSLhT-YF8
+
+
 var titulo      = $('#titulo');
 var nuevoBtn    = $('#nuevo-btn');
 var salirBtn    = $('#salir-btn');
@@ -42,15 +58,37 @@ var txtMensaje  = $('#txtMensaje');
 var btnActivadas    = $('.btn-noti-activadas');
 var btnDesactivadas = $('.btn-noti-desactivadas');
 
+
+var btnLocation      = $('#location-btn');
+
+var modalMapa        = $('.modal-mapa');
+
+var btnTomarFoto     = $('#tomar-foto-btn');
+var btnPhoto         = $('#photo-btn');
+var contenedorCamara = $('.camara-contenedor');
+
+var lat  = null;
+var lng  = null; 
+var foto = null; 
+
 // El usuario, contiene el ID del hÃ©roe seleccionado
 var usuario;
 
+const camara = new Camara( $('#player')[0] );
+
 // ===== Codigo de la aplicaciÃ³n
 
-function crearMensajeHTML(mensaje, personaje) {
+function crearMensajeHTML(mensaje, personaje, lat, lng, foto) {
+
+    // console.log(mensaje, personaje, lat, lng);
 
     var content =`
-    <li class="animated fadeIn fast">
+    <li class="animated fadeIn fast"
+        data-user="${ personaje }"
+        data-mensaje="${ mensaje }"
+        data-tipo="mensaje">
+
+
         <div class="avatar">
             <img src="img/avatars/${ personaje }.jpg">
         </div>
@@ -59,19 +97,68 @@ function crearMensajeHTML(mensaje, personaje) {
                 <h3>@${ personaje }</h3>
                 <br/>
                 ${ mensaje }
+                `;
+    
+    if ( foto ) {
+        content += `
+                <br>
+                <img class="foto-mensaje" src="${ foto }">
+        `;
+    }
+        
+    content += `</div>        
+                <div class="arrow"></div>
             </div>
-            
-            <div class="arrow"></div>
-        </div>
-    </li>
+        </li>
     `;
+
+    
+    // si existe la latitud y longitud, 
+    // llamamos la funcion para crear el mapa
+    if ( lat ) {
+        crearMensajeMapa( lat, lng, personaje );
+    }
+    
+    // Borramos la latitud y longitud por si las usó
+    lat = null;
+    lng = null;
+
+    $('.modal-mapa').remove();
 
     timeline.prepend(content);
     cancelarBtn.click();
 
 }
 
+function crearMensajeMapa(lat, lng, personaje) {
 
+
+    let content = `
+    <li class="animated fadeIn fast"
+        data-tipo="mapa"
+        data-user="${ personaje }"
+        data-lat="${ lat }"
+        data-lng="${ lng }">
+                <div class="avatar">
+                    <img src="img/avatars/${ personaje }.jpg">
+                </div>
+                <div class="bubble-container">
+                    <div class="bubble">
+                        <iframe
+                            width="100%"
+                            height="250"
+                            frameborder="0" style="border:0"
+                            src="https://www.google.com/maps/embed/v1/view?key=${ googleMapKey }&center=${ lat },${ lng }&zoom=17" allowfullscreen>
+                            </iframe>
+                    </div>
+                    
+                    <div class="arrow"></div>
+                </div>
+            </li> 
+    `;
+
+    timeline.prepend(content);
+}
 
 // Globals
 function logIn( ingreso ) {
@@ -149,7 +236,10 @@ postBtn.on('click', function() {
 
     var data = {
         message: mensaje,
-        user: usuario
+        user: usuario,
+        lat: lat,
+        lng: lng,
+        photo: foto
     };
 
     console.log(data);
@@ -167,7 +257,7 @@ postBtn.on('click', function() {
 
 
 
-    crearMensajeHTML( mensaje, usuario );
+    crearMensajeHTML( mensaje, usuario, lat, lng, foto );
 
 });
 
@@ -182,9 +272,11 @@ function getMensajes() {
             console.log(respuesta);
             posts = respuesta;
             console.log(posts);
-            posts.forEach( post =>
-                crearMensajeHTML( post.message, post.user ));
-
+            posts.forEach( post =>{
+                lat= post.latitude;
+                lng = post.longitude;
+                crearMensajeHTML( post.message, post.user, lat, lng, post.photo );
+            });
 
         });
 
@@ -351,5 +443,122 @@ btnActivadas.on( 'click', function() {
 
     cancelarSuscripcion();
 
+
+});
+
+
+// Crear mapa en el modal
+function mostrarMapaModal(lat, lng) {
+
+    $('.modal-mapa').remove();
+    
+    var content = `
+            <div class="modal-mapa">
+                <iframe
+                    width="100%"
+                    height="250"
+                    frameborder="0"
+                    src="https://www.google.com/maps/embed/v1/view?key=${ googleMapKey }&center=${ lat },${ lng }&zoom=17" allowfullscreen>
+                    </iframe>
+            </div>
+    `;
+
+    modal.append( content );
+}
+
+
+// Sección - Recursos Nativos
+
+
+// Obtener la geolocalización
+btnLocation.on('click', () => {
+
+//    console.log('Botón geolocalización');
+    if (navigator.geolocation){
+        $.mdtoast('Cargando mapa ...',{
+            interation: true,
+            interactionTimeout: 2000,
+            actionText: 'Ok!'
+        });
+
+        navigator.geolocation.getCurrentPosition(pos => {
+          console.log(pos);
+
+          mostrarMapaModal( pos.coords.latitude, pos.coords.longitude);
+
+          lat = pos.coords.latitude;
+          lng = pos.coords.longitude;
+        });
+    } else {
+        console.log("No hace uso de la geolocalización");
+    }
+
+      
+
+});
+
+
+
+// Boton de la camara
+// usamos la funcion de fleca para prevenir
+// que jQuery me cambie el valor del this
+btnPhoto.on('click', () => {
+
+    console.log('Inicializar camara');
+    contenedorCamara.removeClass('oculto');
+
+    camara.encender();
+
+});
+
+
+// Boton para tomar la foto
+btnTomarFoto.on('click', () => {
+
+    console.log('Botón tomar foto');
+
+    foto = camara.tomarFoto();
+
+    camara.apagar();
+    
+    // console.log(foto);
+
+});
+
+
+// Share API
+/*if ( navigator.share ){
+    console.log("Navegador lo soporta");
+} else {
+    console.log("Navegador no lo soporta");    
+}*/
+
+
+timeline.on('click', 'li', function() {
+
+    // console.log(  $(this)  );
+    
+    let tipo    = $(this).data('tipo');
+    let lat     = $(this).data('lat');
+    let lng     = $(this).data('lng');
+    let mensaje = $(this).data('mensaje');
+    let user    = $(this).data('user');
+    
+    console.log({ tipo, lat, lng, mensaje, user  });
+
+
+    const shareOpts = {
+        title: user,
+        text: mensaje
+    };
+
+    if ( tipo === 'mapa' ) {
+        shareOpts.text = 'Mapa';
+        shareOpts.url  = `https://www.google.com/maps/@${ lat },${ lng },15z`;
+    }
+
+    navigator.share(shareOpts)
+      .then(() => console.log('Successful share'))
+      .catch((error) => console.log('Error sharing', error));
 
 });

@@ -5,7 +5,7 @@ importScripts('js/sw-db.js');
 importScripts('js/sw-utils.js');
 
 
-const STATIC_CACHE    = 'mensajero-static-v1';
+const STATIC_CACHE    = 'mensajero-static-v2';
 const DYNAMIC_CACHE   = 'mensajero-dynamic-v1';
 const INMUTABLE_CACHE = 'mensajero-inmutable-v1';
 
@@ -21,6 +21,7 @@ const APP_SHELL = [
     'img/avatars/thor.jpg',
     'img/avatars/wolverine.jpg',
     'js/app.js',
+    'js/camara-class.js',
     'js/sw-utils.js',
     'js/libs/plugins/mdtoast.min.js',
     'js/libs/plugins/mdtoast.min.css'
