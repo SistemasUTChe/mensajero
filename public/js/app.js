@@ -1,7 +1,7 @@
-
 var url = window.location.href;
 var swLocation = '/mensajero/sw.js';
 
+var swReg;
 
 if ( navigator.serviceWorker ) {
 
@@ -11,12 +11,18 @@ if ( navigator.serviceWorker ) {
     }
 
 
-    navigator.serviceWorker.register( swLocation );
+    window.addEventListener('load', function() {
+
+        navigator.serviceWorker.register( swLocation ).then( function(reg){
+
+            swReg = reg;
+            swReg.pushManager.getSubscription().then( verificaSuscripcion );
+
+        });
+
+    });
+
 }
-
-
-
-
 
 // Referencias de jQuery
 
@@ -33,11 +39,11 @@ var modalAvatar = $('#modal-avatar');
 var avatarBtns  = $('.seleccion-avatar');
 var txtMensaje  = $('#txtMensaje');
 
+var btnActivadas    = $('.btn-noti-activadas');
+var btnDesactivadas = $('.btn-noti-desactivadas');
+
 // El usuario, contiene el ID del hÃ©roe seleccionado
 var usuario;
-
-
-
 
 // ===== Codigo de la aplicaciÃ³n
 
@@ -218,3 +224,132 @@ window.addEventListener('offline', isOnline );
 
 isOnline();
 
+function enviarNotificacion(mensaje) {
+
+    const notificationOpts = {
+        body: mensaje,
+        icon: 'img/icons/icon-72x72.png'
+    };
+
+
+    const n = new Notification('Mensajero', notificationOpts);
+
+    n.onclick = () => {
+        console.log('Click');
+    };
+
+}
+
+
+function notificarme() {
+
+    if ( !window.Notification ) {
+        console.log('Este navegador no soporta notificaciones');
+        return;
+    }
+
+    if ( Notification.permission === 'granted' ) {
+        
+        // new Notification('Hola Mundo! - granted');
+        enviarNotificacion("Con permisos activados");
+
+    } else if ( Notification.permission !== 'denied' || Notification.permission === 'default' )  {
+
+        Notification.requestPermission( function( permission ) {
+
+            console.log( permission );
+
+            if ( permission === 'granted' ) {
+                // new Notification('Hola Mundo! - pregunta');
+                enviarNotificacion("Acepto envio de notificaciones");
+            }
+
+        });
+
+    }
+}
+
+//notificarme();
+
+function verificaSuscripcion( activadas ) {
+
+    if ( activadas ) {
+        
+        btnActivadas.removeClass('oculto');
+        btnDesactivadas.addClass('oculto');
+
+    } else {
+        btnActivadas.addClass('oculto');
+        btnDesactivadas.removeClass('oculto');
+    }
+
+}
+
+// Get Key
+function getPublicKey() {
+
+     /*fetch('api-push/key')
+         .then( res => res.text())
+         .then( console.log );*/
+
+    return fetch('api-push/key')
+        .then( res => res.arrayBuffer())
+        // returnar arreglo, pero como un Uint8array
+        .then( key => new Uint8Array(key) );
+
+
+}
+
+//getPublicKey();
+//getPublicKey().then(console.log);
+
+btnDesactivadas.on( 'click', function() {
+
+    if ( !swReg ) return console.log('No hay registro de SW');
+
+    getPublicKey().then( function( key ) {
+
+        //Generar la subscripción
+        swReg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: key
+        })
+        .then( res => res.toJSON() )
+        .then( suscripcion => {
+
+             //console.log(suscripcion);
+             //verificaSuscripcion(suscripcion);
+            fetch('api-push/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify( suscripcion )
+            })
+            .then( verificaSuscripcion )
+            .catch( cancelarSuscripcion );
+
+
+        });
+
+
+    });
+
+
+});
+
+function cancelarSuscripcion() {
+
+    swReg.pushManager.getSubscription().then( subs => {
+
+        subs.unsubscribe().then( () =>  verificaSuscripcion(false) );
+
+    });
+
+
+}
+
+btnActivadas.on( 'click', function() {
+
+    cancelarSuscripcion();
+
+
+});

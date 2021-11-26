@@ -1,0 +1,22 @@
+{
+  "name": "servidor",
+  "version": "1.0.0",
+  "description": "\"Servidor node\"",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "nodemon --watch server server/server.js --ignore 'server/*.json",
+    "generate-vapid": "web-push generate-vapid-keys --json > server/vapid.json"
+  },
+  "author": "William Sanchez",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "body-parser": "^1.18.3",
+    "urlsafe-base64": "^1.0.0",
+    "web-push": "^3.3.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}
