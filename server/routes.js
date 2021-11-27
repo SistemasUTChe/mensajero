@@ -43,8 +43,8 @@ router.post('/push', (req, res) => {
     usuario: req.body.usuario
   };
 
-//  console.log ( post );
-
+  //console.log ( post );
+  
   push.sendPush( post );
 
 

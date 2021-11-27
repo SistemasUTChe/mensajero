@@ -288,7 +288,7 @@ function verificaSuscripcion( activadas ) {
 // Get Key
 function getPublicKey() {
 
-     /*fetch('api-push/key')
+/*     fetch('api-push/key')
          .then( res => res.text())
          .then( console.log );*/
 
